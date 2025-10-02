@@ -1,0 +1,198 @@
+# .gitignore for Terraform Projects
+
+# ==========================================
+# Terraform Core Files
+# ==========================================
+
+# Local .terraform directories
+**/.terraform/*
+
+# Terraform lock file (include if you want version pinning, exclude if you want flexibility)
+# For team projects: INCLUDE this file (remove the line below)
+# For solo/flexible projects: EXCLUDE this file (keep the line below)
+.terraform.lock.hcl
+
+# Terraform state files - NEVER COMMIT THESE (contain sensitive data)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+terraform.tfstate.d/
+
+# Terraform plan files (may contain sensitive data)
+*.tfplan
+*.tfplan.*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# ==========================================
+# Sensitive Variable Files - CRITICAL!
+# ==========================================
+
+# Exclude override files as they are usually used to override resources locally
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Your actual variable values - NEVER COMMIT PASSWORDS/SECRETS
+terraform.tfvars
+*.auto.tfvars
+*.auto.tfvars.json
+
+# EXCEPTION: Keep example files for documentation
+!terraform.tfvars.example
+!*.auto.tfvars.example
+
+# Secrets and sensitive files
+secrets.tf
+*secret*
+*password*
+*credentials*
+
+# ==========================================
+# Nasuni-Specific (Your Project)
+# ==========================================
+
+# Your CSV might contain sensitive network info
+# Uncomment if it has production IPs/details:
+# appliances.csv
+
+# Keep example CSV for documentation
+!appliances.csv.example
+
+# ==========================================
+# CLI Configuration Files
+# ==========================================
+
+# Azure CLI
+.azure/
+
+# AWS CLI
+.aws/
+
+# Terraform Cloud/Enterprise
+.terraformrc
+terraform.rc
+
+# ==========================================
+# Operating System Files
+# ==========================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ==========================================
+# IDE and Editor Files
+# ==========================================
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA / PyCharm / WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*.swn
+*~
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ==========================================
+# Backup and Temporary Files
+# ==========================================
+
+# General backups
+*.bak
+*.backup
+*.tmp
+*.temp
+*.old
+*.orig
+
+# Log files
+*.log
+
+# Compressed archives (unless needed for deployment)
+*.zip
+*.tar.gz
+*.rar
+
+# ==========================================
+# Node.js (if using any JS tools)
+# ==========================================
+node_modules/
+package-lock.json
+yarn.lock
+
+# ==========================================
+# Python (if using any Python tools)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+ENV/
+env/
+
+# ==========================================
+# Documentation Build Files
+# ==========================================
+.terraform-docs.yml
+docs/_build/
+
+# ==========================================
+# CI/CD Artifacts
+# ==========================================
+.github/workflows/artifacts/
+
+# ==========================================
+# Custom Patterns for Your Project
+# ==========================================
+
+# If you generate any temporary scripts
+/scripts/*.temp.sh
+/scripts/temp_*
+
+# Any local testing directories
+/test-deployments/
+/scratch/
+/local/
+
+# SSH keys (if accidentally placed in repo)
+*.pem
+*.key
+id_rsa*
+*.pub

@@ -16,7 +16,7 @@ WARNING_COUNT=0
 LINE_NUM=0
 
 # Expected column count (22 columns - added network_resource_group_name)
-EXPECTED_COLS=22
+EXPECTED_COLS=20
 
 echo "Checking CSV format and required fields..."
 echo ""
