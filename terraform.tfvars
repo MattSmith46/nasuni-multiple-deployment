@@ -1,28 +1,25 @@
 # terraform.tfvars - Multi-Subscription Nasuni Deployment Configuration
 
-# Default subscription (used for Terraform state and provider)
-# Use one of your subscription IDs as the default
+# IMPORTANT: This file contains sensitive credentials and should NEVER be committed to git
+# It is already in .gitignore - keep it that way!
+
+# Default subscription (used for the 'default' workspace if no workspace is selected)
+# This should match one of your subscription IDs
 default_subscription_id = "c7a18a12-7088-4955-8504-5156e8f48fdd"
 
-# Map your subscription IDs to friendly aliases
-# Add as many as needed - you have 3 unique subscriptions
-subscription_aliases = {
-  sub1 = "c7a18a12-7088-4955-8504-5156e8f48fdd"  # PGR Subscription
-  sub2 = "6b025554-fc3d-49a6-a9a1-56d397909042"  # QIS Subscription
-  sub3 = "8f054358-9640-4873-a3bf-f1e3547ed39f"  # QTI Subscription
-  sub4 = ""  # Not used - leave empty or add another if needed
-}
-
 # Admin credentials (used for all VMs across all subscriptions)
-# These will be the login credentials for all Nasuni appliances
+# SECURITY WARNING: Using plain text passwords is not recommended for production
+# 
+# RECOMMENDED APPROACHES:
+# 1. Use environment variables (most secure):
+#    export TF_VAR_admin_username="qadmin"
+#    export TF_VAR_admin_password="your-secure-password"
+#    Then remove these lines from this file
+#
+# 2. Use Azure Key Vault to store passwords
+# 3. Use a secrets management tool like HashiCorp Vault
 admin_username = "qadmin"
-admin_password = "!!!HPVmw@r3!!!"  # CHANGE THIS!
-
-# Option 2: Git repository (if using version control)
-# module_source = "git::https://github.com/your-org/nasuni-single-appliance.git"
-
-# Option 3: Git with specific version/tag
-# module_source = "git::https://github.com/your-org/nasuni-single-appliance.git?ref=v1.0.0"
+admin_password = "!!!HPVmw@r3!!!"  # CHANGE THIS! Use a strong password (12+ chars, mix of upper/lower/numbers/symbols)
 
 # Path to your appliances CSV file
 appliances_csv_path = "./appliances.csv"

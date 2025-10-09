@@ -22,16 +22,29 @@ provider "azurerm" {
   subscription_id = local.current_subscription_id
 }
 
+# Output warning if no appliances found for current workspace
+resource "null_resource" "workspace_validation" {
+  triggers = {
+    workspace = local.current_workspace
+    warning   = local.workspace_warning
+  }
+
+  provisioner "local-exec" {
+    command = local.has_appliances ? "echo 'Workspace ${local.current_workspace}: Found ${length(local.filtered_appliances)} appliance(s)'" : "echo '${local.workspace_warning}'"
+  }
+}
+
 # Automatically accept marketplace terms for current subscription
 resource "null_resource" "accept_marketplace_terms" {
   provisioner "local-exec" {
     command = <<-EOT
+      echo "Accepting marketplace terms for subscription ${local.current_subscription_id}..."
       az account set --subscription "${local.current_subscription_id}"
       az vm image terms accept \
         --publisher nasunicorporation \
         --offer nasuni-nea-90-prod \
         --plan nasuni-nea-9153-prod \
-        --output none || true
+        --output none || echo "Terms may already be accepted or you may not have permissions"
     EOT
   }
 
@@ -45,7 +58,10 @@ module "nasuni_appliances" {
   source   = "./nasuni-single-appliance"
   for_each = { for a in local.filtered_appliances : a.vm_name => a }
 
-  depends_on = [null_resource.accept_marketplace_terms]
+  depends_on = [
+    null_resource.accept_marketplace_terms,
+    null_resource.workspace_validation
+  ]
 
   vm_name            = each.value.vm_name
   environment        = each.value.environment

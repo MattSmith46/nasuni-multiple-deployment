@@ -196,3 +196,8 @@ docs/_build/
 *.key
 id_rsa*
 *.pub
+
+# Environment variable files
+.env
+.env.local
+.env.*.local

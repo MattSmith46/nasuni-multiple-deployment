@@ -30,11 +30,13 @@ locals {
   ]
 
   # Workspace to subscription mapping
+  # Add more subscriptions here as needed
+  # The workspace name is used with: terraform workspace select <name>
   workspace_subscriptions = {
     pgr = "c7a18a12-7088-4955-8504-5156e8f48fdd"
     qis = "6b025554-fc3d-49a6-a9a1-56d397909042"
     qti = "8f054358-9640-4873-a3bf-f1e3547ed39f"
-    # Add more subscriptions here as needed:
+    # To add more subscriptions:
     # sub4 = "dddddddd-4444-4444-4444-444444444444"
     # sub5 = "eeeeeeee-5555-5555-5555-555555555555"
   }
@@ -50,12 +52,13 @@ locals {
   )
 
   # Filter appliances for current subscription only
+  # This ensures each workspace only deploys to its assigned subscription
   filtered_appliances = [
     for a in local.all_appliances : a
     if a.subscription_id == local.current_subscription_id
   ]
 
-  # Extract unique subscription IDs for validation
+  # Extract unique subscription IDs for validation and reporting
   unique_subscriptions = distinct([for a in local.all_appliances : a.subscription_id])
   
   # Group all appliances by subscription for reporting
@@ -64,4 +67,10 @@ locals {
       for a in local.all_appliances : a.vm_name if a.subscription_id == sub
     ]
   }
+  
+  # Validation: Check if current workspace has any appliances
+  has_appliances = length(local.filtered_appliances) > 0
+  
+  # Warning message if no appliances found for current workspace
+  workspace_warning = local.has_appliances ? "" : "WARNING: No appliances found for workspace '${local.current_workspace}' with subscription '${local.current_subscription_id}'. Check your CSV file and workspace mapping."
 }

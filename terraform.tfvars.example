@@ -1,0 +1,19 @@
+# terraform.tfvars.example - Template for Multi-Subscription Nasuni Deployment
+
+# Copy this file to terraform.tfvars and fill in your values:
+# cp terraform.tfvars.example terraform.tfvars
+
+# Default subscription (used for the 'default' workspace if no workspace is selected)
+# Replace with one of your Azure subscription IDs
+default_subscription_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Admin credentials (used for all VMs across all subscriptions)
+# SECURITY BEST PRACTICE: Use environment variables instead:
+#   export TF_VAR_admin_username="your-username"
+#   export TF_VAR_admin_password="your-secure-password"
+# If using environment variables, you can omit these lines from terraform.tfvars
+admin_username = "qadmin"
+admin_password = "ChangeThisSecurePassword123!"  # Use a strong password (12+ chars)
+
+# Path to your appliances CSV file
+appliances_csv_path = "./appliances.csv"
