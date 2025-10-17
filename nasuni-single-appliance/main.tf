@@ -40,5 +40,15 @@ module "azure_nasuni" {
   storage_account_name        = var.azure_config.storage_account_name
   enable_virtual_wan          = var.azure_config.enable_virtual_wan
   
+  # New configuration options
+  enable_accelerated_networking = var.enable_accelerated_networking
+  disk_storage_account_type     = var.disk_storage_account_type
+  disk_iops_read_write          = var.disk_iops_read_write
+  disk_mbps_read_write          = var.disk_mbps_read_write
+  enable_dns_reverse_lookup     = var.enable_dns_reverse_lookup
+  dns_servers                   = var.dns_servers
+  custom_nsg_rules              = var.custom_nsg_rules
+  availability_set_id           = var.availability_set_id
+  
   name_prefix = local.name_prefix
 }

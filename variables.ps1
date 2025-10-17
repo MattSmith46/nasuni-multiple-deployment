@@ -27,8 +27,8 @@ $AppliancesCsvPath = "./appliances.csv"
 # ----------------------------------------------------------------------------
 # REQUIRED: Update these with your actual NMC details
 $NmcHostname = "qcoscujnunicp01.quantaservices.local"  # UPDATE: Your NMC hostname
-$NmcUsername = "admin"                    # UPDATE: Your NMC admin username
-$NmcPassword = 'YourNmcPassword123!'      # UPDATE: Your NMC password (use single quotes)
+$NmcUsername = "svcqconasuni"                    # UPDATE: Your NMC admin username
+$NmcPassword = '!!!l0c4dm1n!!!3c905btx!!!'      # UPDATE: Your NMC password (use single quotes)
 
 # ----------------------------------------------------------------------------
 # SERIAL NUMBER RETRIEVAL

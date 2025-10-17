@@ -72,6 +72,15 @@ module "nasuni_appliances" {
   admin_password     = var.admin_password
   network_cidr       = ""  # Not used - always using existing networks
   subnet_cidr        = ""  # Not used - always using existing networks
+  
+  # New configuration options
+  enable_accelerated_networking = each.value.accelerated_networking == "true" ? true : false
+  disk_storage_account_type     = each.value.disk_type
+  disk_iops_read_write          = tonumber(each.value.disk_iops)
+  disk_mbps_read_write          = tonumber(each.value.disk_mbps)
+  enable_dns_reverse_lookup     = each.value.enable_dns_reverse == "true" ? true : false
+  dns_servers                   = each.value.dns_servers != "" ? split(",", each.value.dns_servers) : []
+  
   tags               = {
     critical-infrastructure = each.value.critical_infrastructure
     environment            = each.value.environment

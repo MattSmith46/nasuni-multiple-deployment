@@ -19,6 +19,16 @@ locals {
       storage_account_name        = try(a.storage_account_name, "")
       enable_virtual_wan          = try(a.enable_virtual_wan, "false")
       site                        = try(a.site, "")
+      
+      # New optional fields with defaults
+      accelerated_networking      = try(a.accelerated_networking, "true")
+      disk_type                   = try(a.disk_type, "PremiumV2_LRS")
+      disk_iops                   = try(a.disk_iops, "3000")
+      disk_mbps                   = try(a.disk_mbps, "125")
+      enable_dns_reverse          = try(a.enable_dns_reverse, "false")
+      dns_servers                 = try(a.dns_servers, "")
+      availability_set_name       = try(a.availability_set_name, "")
+      
       # Tags from CSV
       critical_infrastructure     = try(a.critical_infrastructure, "Yes")
       external_facing            = try(a.external_facing, "No")

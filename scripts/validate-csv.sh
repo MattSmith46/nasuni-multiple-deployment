@@ -15,13 +15,13 @@ ERROR_COUNT=0
 WARNING_COUNT=0
 LINE_NUM=0
 
-# Expected column count (22 columns - added network_resource_group_name)
-EXPECTED_COLS=20
+# Expected column count (26 columns - added 6 new columns)
+EXPECTED_COLS=26
 
 echo "Checking CSV format and required fields..."
 echo ""
 
-while IFS=, read -r vm_name sub_id env location vm_size cache vm_rg net_rg net_cidr sub_cidr ex_vnet_rg ex_vnet ex_sub sa vwan site crit ext owner proj reg svc rest; do
+while IFS=, read -r vm_name sub_id env location vm_size cache vm_rg net_rg ex_vnet_rg ex_vnet ex_sub sa vwan site crit ext owner proj reg svc accel_net disk_type disk_iops disk_mbps dns_rev dns_servers rest; do
   ((LINE_NUM++))
   
   # Skip header
@@ -30,7 +30,7 @@ while IFS=, read -r vm_name sub_id env location vm_size cache vm_rg net_rg net_c
   fi
   
   # Count columns
-  COL_COUNT=$(echo "$vm_name,$sub_id,$env,$location,$vm_size,$cache,$vm_rg,$net_rg,$net_cidr,$sub_cidr,$ex_vnet_rg,$ex_vnet,$ex_sub,$sa,$vwan,$site,$crit,$ext,$owner,$proj,$reg,$svc" | awk -F',' '{print NF}')
+  COL_COUNT=$(echo "$vm_name,$sub_id,$env,$location,$vm_size,$cache,$vm_rg,$net_rg,$ex_vnet_rg,$ex_vnet,$ex_sub,$sa,$vwan,$site,$crit,$ext,$owner,$proj,$reg,$svc,$accel_net,$disk_type,$disk_iops,$disk_mbps,$dns_rev,$dns_servers" | awk -F',' '{print NF}')
   
   if [ "$COL_COUNT" -ne "$EXPECTED_COLS" ]; then
     echo "Line $LINE_NUM: ❌ Column count mismatch (expected $EXPECTED_COLS, got $COL_COUNT)"
@@ -84,9 +84,41 @@ while IFS=, read -r vm_name sub_id env location vm_size cache vm_rg net_rg net_c
     ((ERROR_COUNT++))
   fi
   
+  # Validate new optional fields
+  if [[ -n "$accel_net" ]] && [[ "$accel_net" != "true" ]] && [[ "$accel_net" != "false" ]]; then
+    echo "Line $LINE_NUM: ⚠️  Warning: accelerated_networking should be 'true' or 'false' for $vm_name"
+    ((WARNING_COUNT++))
+  fi
+  
+  if [[ -n "$disk_type" ]] && [[ "$disk_type" != "Premium_LRS" ]] && [[ "$disk_type" != "PremiumV2_LRS" ]] && [[ "$disk_type" != "StandardSSD_LRS" ]]; then
+    echo "Line $LINE_NUM: ⚠️  Warning: disk_type should be Premium_LRS, PremiumV2_LRS, or StandardSSD_LRS for $vm_name"
+    ((WARNING_COUNT++))
+  fi
+  
+  if [[ -n "$disk_iops" ]] && ! [[ "$disk_iops" =~ ^[0-9]+$ ]]; then
+    echo "Line $LINE_NUM: ❌ disk_iops must be a number for $vm_name"
+    ((ERROR_COUNT++))
+  elif [[ -n "$disk_iops" ]] && (( disk_iops < 3000 || disk_iops > 160000 )); then
+    echo "Line $LINE_NUM: ⚠️  Warning: disk_iops should be between 3000-160000 for $vm_name"
+    ((WARNING_COUNT++))
+  fi
+  
+  if [[ -n "$disk_mbps" ]] && ! [[ "$disk_mbps" =~ ^[0-9]+$ ]]; then
+    echo "Line $LINE_NUM: ❌ disk_mbps must be a number for $vm_name"
+    ((ERROR_COUNT++))
+  elif [[ -n "$disk_mbps" ]] && (( disk_mbps < 125 || disk_mbps > 10000 )); then
+    echo "Line $LINE_NUM: ⚠️  Warning: disk_mbps should be between 125-10000 for $vm_name"
+    ((WARNING_COUNT++))
+  fi
+  
+  if [[ -n "$dns_rev" ]] && [[ "$dns_rev" != "true" ]] && [[ "$dns_rev" != "false" ]]; then
+    echo "Line $LINE_NUM: ⚠️  Warning: enable_dns_reverse should be 'true' or 'false' for $vm_name"
+    ((WARNING_COUNT++))
+  fi
+  
   # Validate network configuration
-  if [[ -z "$ex_vnet" ]] && [[ -z "$net_cidr" ]]; then
-    echo "Line $LINE_NUM: ⚠️  Warning: No existing VNet or network_cidr specified for $vm_name"
+  if [[ -z "$ex_vnet" ]]; then
+    echo "Line $LINE_NUM: ⚠️  Warning: No existing VNet specified for $vm_name"
     ((WARNING_COUNT++))
   fi
   

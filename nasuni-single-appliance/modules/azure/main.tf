@@ -31,6 +31,10 @@ resource "azurerm_virtual_network" "nasuni" {
   address_space       = [var.network_cidr]
   location            = data.azurerm_resource_group.nasuni.location
   resource_group_name = data.azurerm_resource_group.nasuni.name
+  
+  # DNS servers for reverse lookup (if enabled)
+  dns_servers         = var.enable_dns_reverse_lookup && length(var.dns_servers) > 0 ? var.dns_servers : null
+  
   tags                = var.tags
 }
 
@@ -46,9 +50,14 @@ resource "azurerm_subnet" "nasuni" {
 # Get the subnet reference (existing or new)
 locals {
   subnet_id = var.existing_subnet_name != "" ? data.azurerm_subnet.existing[0].id : azurerm_subnet.nasuni[0].id
+  
+  # Extract reverse DNS zone name from subnet CIDR
+  # For 10.239.4.0/24, this creates "4.239.10.in-addr.arpa"
+  subnet_cidr_parts = var.enable_dns_reverse_lookup ? split(".", split("/", var.subnet_cidr)[0]) : []
+  reverse_zone_name = var.enable_dns_reverse_lookup ? "${element(local.subnet_cidr_parts, 2)}.${element(local.subnet_cidr_parts, 1)}.${element(local.subnet_cidr_parts, 0)}.in-addr.arpa" : ""
 }
 
-# Create Network Security Group
+# Create Network Security Group with improved naming
 resource "azurerm_network_security_group" "nasuni" {
   name                = "${var.name_prefix}-nsg"
   location            = data.azurerm_resource_group.nasuni.location
@@ -56,7 +65,7 @@ resource "azurerm_network_security_group" "nasuni" {
   tags                = var.tags
 }
 
-# Create Security Rules
+# Create Security Rules from variables
 resource "azurerm_network_security_rule" "nasuni" {
   count = length(var.security_rules)
 
@@ -73,12 +82,30 @@ resource "azurerm_network_security_rule" "nasuni" {
   network_security_group_name = azurerm_network_security_group.nasuni.name
 }
 
-# Create Network Interface (without public IP due to security policy)
+# Create additional custom NSG rules
+resource "azurerm_network_security_rule" "custom" {
+  count = length(var.custom_nsg_rules)
+
+  name                        = var.custom_nsg_rules[count.index].name
+  priority                    = var.custom_nsg_rules[count.index].priority
+  direction                   = var.custom_nsg_rules[count.index].direction
+  access                      = var.custom_nsg_rules[count.index].access
+  protocol                    = var.custom_nsg_rules[count.index].protocol
+  source_port_range           = var.custom_nsg_rules[count.index].source_port_range
+  destination_port_range      = var.custom_nsg_rules[count.index].destination_port_range
+  source_address_prefix       = var.custom_nsg_rules[count.index].source_address_prefix
+  destination_address_prefix  = var.custom_nsg_rules[count.index].destination_address_prefix
+  resource_group_name         = data.azurerm_resource_group.nasuni.name
+  network_security_group_name = azurerm_network_security_group.nasuni.name
+}
+
+# Create Network Interface with Accelerated Networking
 resource "azurerm_network_interface" "nasuni" {
-  name                = "${var.name_prefix}-nic"
-  location            = data.azurerm_resource_group.nasuni.location
-  resource_group_name = data.azurerm_resource_group.nasuni.name
-  tags                = var.tags
+  name                          = "${var.name_prefix}-nic"
+  location                      = data.azurerm_resource_group.nasuni.location
+  resource_group_name           = data.azurerm_resource_group.nasuni.name
+  enable_accelerated_networking = var.enable_accelerated_networking
+  tags                          = var.tags
 
   ip_configuration {
     name                          = "internal"
@@ -106,15 +133,37 @@ resource "azurerm_storage_account" "nasuni" {
   tags = var.tags
 }
 
-# Create Managed Disk for cache
+# Create Availability Set (optional - only if not provided)
+resource "azurerm_availability_set" "nasuni" {
+  count                        = var.availability_set_id == null ? 1 : 0
+  name                         = "${var.name_prefix}-avset"
+  location                     = data.azurerm_resource_group.nasuni.location
+  resource_group_name          = data.azurerm_resource_group.nasuni.name
+  platform_fault_domain_count  = 2
+  platform_update_domain_count = 5
+  managed                      = true
+  tags                         = var.tags
+}
+
+# Determine which availability set to use
+locals {
+  availability_set_id = var.availability_set_id != null ? var.availability_set_id : (length(azurerm_availability_set.nasuni) > 0 ? azurerm_availability_set.nasuni[0].id : null)
+}
+
+# Create Managed Disk for cache - Premium SSD v2 support
 resource "azurerm_managed_disk" "cache" {
   name                 = "${var.name_prefix}-cache-disk"
   location             = data.azurerm_resource_group.nasuni.location
   resource_group_name  = data.azurerm_resource_group.nasuni.name
-  storage_account_type = "Premium_LRS"
+  storage_account_type = var.disk_storage_account_type
   create_option        = "Empty"
   disk_size_gb         = var.cache_disk_size_gb
-  tags                 = var.tags
+  
+  # Premium SSD v2 specific settings
+  disk_iops_read_write = var.disk_storage_account_type == "PremiumV2_LRS" ? var.disk_iops_read_write : null
+  disk_mbps_read_write = var.disk_storage_account_type == "PremiumV2_LRS" ? var.disk_mbps_read_write : null
+  
+  tags = var.tags
 }
 
 # Create Virtual Machine
@@ -124,6 +173,10 @@ resource "azurerm_linux_virtual_machine" "nasuni" {
   resource_group_name = data.azurerm_resource_group.nasuni.name
   size                = var.vm_size
   admin_username      = var.admin_username
+  
+  # Availability Set (use provided or newly created)
+  availability_set_id = local.availability_set_id
+  
   tags                = var.tags
 
   disable_password_authentication = false
@@ -151,6 +204,11 @@ resource "azurerm_linux_virtual_machine" "nasuni" {
     product   = "nasuni-nea-90-prod"
     publisher = "nasunicorporation"
   }
+  
+  # Boot diagnostics
+  boot_diagnostics {
+    storage_account_uri = var.storage_account_name != "" ? null : (length(azurerm_storage_account.nasuni) > 0 ? azurerm_storage_account.nasuni[0].primary_blob_endpoint : null)
+  }
 }
 
 # Attach cache disk
@@ -159,4 +217,31 @@ resource "azurerm_virtual_machine_data_disk_attachment" "cache" {
   virtual_machine_id = azurerm_linux_virtual_machine.nasuni.id
   lun                = "0"
   caching            = "ReadWrite"
+}
+
+# DNS Reverse Lookup Zone (if enabled)
+resource "azurerm_private_dns_zone" "reverse_lookup" {
+  count               = var.enable_dns_reverse_lookup ? 1 : 0
+  name                = local.reverse_zone_name
+  resource_group_name = data.azurerm_resource_group.nasuni.name
+  tags                = var.tags
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "reverse_lookup" {
+  count                 = var.enable_dns_reverse_lookup ? 1 : 0
+  name                  = "${var.name_prefix}-dns-link"
+  resource_group_name   = data.azurerm_resource_group.nasuni.name
+  private_dns_zone_name = azurerm_private_dns_zone.reverse_lookup[0].name
+  virtual_network_id    = var.existing_vnet_name != "" ? data.azurerm_virtual_network.existing[0].id : azurerm_virtual_network.nasuni[0].id
+  tags                  = var.tags
+}
+
+resource "azurerm_private_dns_ptr_record" "nasuni" {
+  count               = var.enable_dns_reverse_lookup ? 1 : 0
+  name                = element(split(".", azurerm_network_interface.nasuni.private_ip_address), 3)
+  zone_name           = azurerm_private_dns_zone.reverse_lookup[0].name
+  resource_group_name = data.azurerm_resource_group.nasuni.name
+  ttl                 = 300
+  records             = ["${var.vm_name}.${var.existing_vnet_resource_group != "" ? var.existing_vnet_resource_group : data.azurerm_resource_group.nasuni.name}.local"]
+  tags                = var.tags
 }

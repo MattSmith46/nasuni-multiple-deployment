@@ -75,3 +75,62 @@ variable "azure_config" {
     enable_virtual_wan          = optional(bool, false)
   })
 }
+
+# New variables for requirements
+variable "enable_accelerated_networking" {
+  description = "Enable accelerated networking on the NIC"
+  type        = bool
+  default     = true
+}
+
+variable "disk_storage_account_type" {
+  description = "Storage account type for cache disk (Premium_LRS, PremiumV2_LRS)"
+  type        = string
+  default     = "PremiumV2_LRS"
+}
+
+variable "disk_iops_read_write" {
+  description = "IOPS for PremiumV2_LRS disks"
+  type        = number
+  default     = 3000
+}
+
+variable "disk_mbps_read_write" {
+  description = "Throughput (MB/s) for PremiumV2_LRS disks"
+  type        = number
+  default     = 125
+}
+
+variable "enable_dns_reverse_lookup" {
+  description = "Enable DNS reverse lookup configuration"
+  type        = bool
+  default     = false
+}
+
+variable "dns_servers" {
+  description = "List of DNS servers for the VNet"
+  type        = list(string)
+  default     = []
+}
+
+variable "custom_nsg_rules" {
+  description = "Additional custom NSG rules to apply"
+  type = list(object({
+    name                       = string
+    priority                   = number
+    direction                  = string
+    access                     = string
+    protocol                   = string
+    source_port_range          = string
+    destination_port_range     = string
+    source_address_prefix      = string
+    destination_address_prefix = string
+  }))
+  default = []
+}
+
+variable "availability_set_id" {
+  description = "ID of existing availability set (optional)"
+  type        = string
+  default     = null
+}
