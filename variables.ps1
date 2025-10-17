@@ -27,8 +27,8 @@ $AppliancesCsvPath = "./appliances.csv"
 # ----------------------------------------------------------------------------
 # REQUIRED: Update these with your actual NMC details
 $NmcHostname = "qcoscujnunicp01.quantaservices.local"
-$NmcUsername = "svcqconasuni"
-$NmcPassword = '!!!l0c4dm1n!!!3c905btx!!!'
+$NmcUsername = "svcqconasuni"  # Reserved for future use / manual NMC connections
+$NmcPassword = '!!!l0c4dm1n!!!3c905btx!!!'  # Reserved for future use / manual NMC connections
 
 # ----------------------------------------------------------------------------
 # SERIAL NUMBER RETRIEVAL
@@ -187,9 +187,9 @@ $GenerateReport = $true
 $SendCompletionEmail = $false
 $SendErrorEmail = $false
 
-# ----------------------------------------------------------------------------
+# ============================================================================
 # HELPER FUNCTIONS
-# ----------------------------------------------------------------------------
+# ============================================================================
 
 function Get-VNetDnsServers {
     <#
@@ -210,13 +210,13 @@ function Get-VNetDnsServers {
     Azure Subscription ID
     #>
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$VNetName,
         
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$ResourceGroup,
         
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SubscriptionId
     )
     
@@ -237,7 +237,8 @@ function Get-VNetDnsServers {
             $dnsServers = $dnsServersJson | ConvertFrom-Json
             
             if ($dnsServers -and $dnsServers.Count -gt 0) {
-                Write-Host "[OK] Found DNS servers in VNet: $($dnsServers -join ', ')" -ForegroundColor Green
+                $dnsServerList = $dnsServers -join ', '
+                Write-Host "[OK] Found DNS servers in VNet: $dnsServerList" -ForegroundColor Green
                 return $dnsServers
             }
         }
@@ -268,10 +269,10 @@ function Get-ApplianceSettings {
     Hashtable containing data from the CSV row for this appliance
     #>
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$ApplianceName,
         
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [hashtable]$CsvData
     )
     
@@ -363,7 +364,7 @@ function Get-StorageAccountKey {
     Name of the Azure Storage Account
     #>
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$StorageAccountName
     )
     
@@ -385,7 +386,7 @@ function Get-StorageAccountKey {
         }
     }
     catch {
-        Write-Warning "Could not retrieve storage key for $StorageAccountName: $_"
+        Write-Warning "Could not retrieve storage key for $StorageAccountName : $_"
     }
     
     throw "Could not retrieve storage key for $StorageAccountName. Ensure storage account exists and you have access."
@@ -459,7 +460,7 @@ function Test-Configuration {
 #
 # BEFORE RUNNING:
 # 1. Ensure NMC (qcoscujnunicp01.quantaservices.local) is accessible
-# 2. Verify you're logged into Azure with: az login
+# 2. Verify you are logged into Azure with: az login
 # 3. Deploy infrastructure first with Terraform
 # 4. Run this automation script after Terraform completes
 #
