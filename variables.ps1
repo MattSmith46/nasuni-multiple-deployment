@@ -70,7 +70,7 @@ $ApplianceOverrides = @{
         
         # Active Directory (optional)
         JoinAD = $false
-        AdDomain = "quantaservices.com"
+        AdDomain = "quantaservices.local"
         AdUsername = "svc-nasuni"
         AdPassword = "YourADPassword123!"  # UPDATE if using AD
         AdOU = ""
@@ -84,11 +84,11 @@ $ApplianceOverrides = @{
         # Network Configuration - DHCP
         UseStaticIP = $false  # Let Azure assign IP via DHCP
         # PrimaryDns and SecondaryDns will be auto-detected from VNet
-        SearchDomain = "quantaservices.com"
+        SearchDomain = "quantaservices.local"
         
         # Active Directory
         JoinAD = $false
-        AdDomain = "quantaservices.com"
+        AdDomain = "quantaservices.local"
         AdUsername = "svc-nasuni"
         AdPassword = "YourADPassword123!"  # UPDATE if using AD
         
@@ -100,11 +100,11 @@ $ApplianceOverrides = @{
         # Network Configuration - DHCP
         UseStaticIP = $false  # Let Azure assign IP via DHCP
         # PrimaryDns and SecondaryDns will be auto-detected from VNet
-        SearchDomain = "quantaservices.com"
+        SearchDomain = "quantaservices.local"
         
         # Active Directory
         JoinAD = $false
-        AdDomain = "quantaservices.com"
+        AdDomain = "quantaservices.local"
         AdUsername = "svc-nasuni"
         AdPassword = "YourADPassword123!"  # UPDATE if using AD
         
