@@ -2,19 +2,11 @@
 # Nasuni Edge Appliance Automation Variables Configuration
 # Multi-Subscription Workspace Integration
 # ============================================================================
-# Copy this file to your Terraform directory and update the values below
-# Usage: ./Deploy-NasuniAutomation.ps1 -Workspace <workspace-name>
-# ============================================================================
 
 # ----------------------------------------------------------------------------
 # DEPLOYMENT MODE
 # ----------------------------------------------------------------------------
-# "workspace" - Configure appliances in current Terraform workspace (recommended)
-# "all"       - Configure all appliances from CSV regardless of workspace
-# "specific"  - Configure only specific appliances (set $TargetAppliances)
 $DeploymentMode = "workspace"
-
-# If DeploymentMode = "specific", list appliance names here
 $TargetAppliances = @()
 
 # ----------------------------------------------------------------------------
@@ -25,49 +17,52 @@ $AppliancesCsvPath = "./appliances.csv"
 # ----------------------------------------------------------------------------
 # NMC (NASUNI MANAGEMENT CONSOLE) CONFIGURATION
 # ----------------------------------------------------------------------------
-# REQUIRED: Update these with your actual NMC details
-$NmcHostname = "qcoscujnunicp01.quantaservices.local"  # UPDATE: Your NMC hostname
-$NmcUsername = "svcqconasuni"                    # UPDATE: Your NMC admin username
-$NmcPassword = '!!!l0c4dm1n!!!3c905btx!!!'      # UPDATE: Your NMC password (use single quotes)
+$NmcHostname = "qcoscujnunicp01.quantaservices.local"
+$NmcUsername = "svcqconasuni"
+$NmcPassword = '!!!l0c4dm1n!!!3c905btx!!!'
 
 # ----------------------------------------------------------------------------
 # SERIAL NUMBER RETRIEVAL
 # ----------------------------------------------------------------------------
-# "nmc" - Retrieve from NMC (recommended, works with all Nasuni versions)
 $SerialNumberMethod = "nmc"
 
 # ----------------------------------------------------------------------------
 # DEFAULT NETWORK SETTINGS
 # ----------------------------------------------------------------------------
-# These are used if not overridden in $ApplianceOverrides
-$DefaultPrimaryDns = '10.0.0.10'        # UPDATE: Your DNS server
-$DefaultSecondaryDns = '10.0.0.11'      # UPDATE: Your secondary DNS
+# These are fallback values if VNet DNS cannot be detected
+# Leave empty to auto-detect from VNet configuration
+$DefaultPrimaryDns = ''         # Empty = Auto-detect from VNet
+$DefaultSecondaryDns = ''       # Empty = Auto-detect from VNet
 $DefaultSearchDomain = 'quantaservices.com'
 $DefaultNtpServer = 'time.windows.com'
 $DefaultNtpServer2 = 'pool.ntp.org'
 
+# Manual DNS Override (optional)
+# If you want to force specific DNS servers instead of auto-detection, set them here:
+$ManualDnsOverride = @{
+    # Example:
+    # "PGR-Nasuni-Network-pd-scus-vnet" = @("10.239.0.10", "10.239.0.11")
+    # "QTI-Nasuni-Network-pd-cace-vnet" = @("10.241.0.10", "10.241.0.11")
+}
+
 # ----------------------------------------------------------------------------
 # APPLIANCE-SPECIFIC OVERRIDES
 # ----------------------------------------------------------------------------
-# Configure each appliance with specific network settings
-# REQUIRED: Update with your actual network details
+# Using DHCP for all appliances - IPs assigned by Azure automatically
+# DNS will be auto-detected from VNet configuration
 $ApplianceOverrides = @{
     "PGRSCUTNUNIVP01" = @{
-        # Network Configuration
-        UseStaticIP = $true
-        StaticIP = "10.239.4.10"              # UPDATE: Your static IP
-        Netmask = "255.255.255.0"             # UPDATE: Your netmask
-        Gateway = "10.239.4.1"                # UPDATE: Your gateway
-        PrimaryDns = "10.0.0.10"              # UPDATE: Your DNS
-        SecondaryDns = "10.0.0.11"            # UPDATE: Your DNS
+        # Network Configuration - DHCP
+        UseStaticIP = $false  # Let Azure assign IP via DHCP
+        # PrimaryDns and SecondaryDns will be auto-detected from VNet
         SearchDomain = "quantaservices.com"
         
         # Active Directory (optional)
-        JoinAD = $false                        # Set to $true if joining AD
+        JoinAD = $false
         AdDomain = "quantaservices.com"
-        AdUsername = "svc-nasuni"              # UPDATE: Your AD service account
-        AdPassword = "YourADPassword123!"      # UPDATE: Your AD password
-        AdOU = ""                              # Optional: OU path
+        AdUsername = "svc-nasuni"
+        AdPassword = "YourADPassword123!"  # UPDATE if using AD
+        AdOU = ""
         
         # Description
         Description = "PGR Production Nasuni - Houston"
@@ -75,51 +70,43 @@ $ApplianceOverrides = @{
     }
     
     "QISSCUTNUNIVP01" = @{
-        # Network Configuration
-        UseStaticIP = $true
-        StaticIP = "10.240.4.10"              # UPDATE: Your static IP
-        Netmask = "255.255.255.0"
-        Gateway = "10.240.4.1"                # UPDATE: Your gateway
-        PrimaryDns = "10.0.0.10"
-        SecondaryDns = "10.0.0.11"
+        # Network Configuration - DHCP
+        UseStaticIP = $false  # Let Azure assign IP via DHCP
+        # PrimaryDns and SecondaryDns will be auto-detected from VNet
         SearchDomain = "quantaservices.com"
         
         # Active Directory
         JoinAD = $false
         AdDomain = "quantaservices.com"
         AdUsername = "svc-nasuni"
-        AdPassword = "YourADPassword123!"
+        AdPassword = "YourADPassword123!"  # UPDATE if using AD
         
         Description = "QIS Production Nasuni - Houston"
         Timezone = "America/Chicago"
     }
     
     "QTICCETNUNIVP01" = @{
-        # Network Configuration
-        UseStaticIP = $true
-        StaticIP = "10.241.4.10"              # UPDATE: Your static IP
-        Netmask = "255.255.255.0"
-        Gateway = "10.241.4.1"                # UPDATE: Your gateway
-        PrimaryDns = "10.0.0.20"              # UPDATE: Canada DNS
-        SecondaryDns = "10.0.0.21"
+        # Network Configuration - DHCP
+        UseStaticIP = $false  # Let Azure assign IP via DHCP
+        # PrimaryDns and SecondaryDns will be auto-detected from VNet
         SearchDomain = "quantaservices.com"
         
         # Active Directory
         JoinAD = $false
         AdDomain = "quantaservices.com"
         AdUsername = "svc-nasuni"
-        AdPassword = "YourADPassword123!"
+        AdPassword = "YourADPassword123!"  # UPDATE if using AD
         
         Description = "QTI Production Nasuni - Canada"
-        Timezone = "America/Toronto"           # Canada timezone
+        Timezone = "America/Toronto"
     }
 }
 
 # ----------------------------------------------------------------------------
-# DEFAULT SETTINGS (Used if not overridden above)
+# DEFAULT SETTINGS
 # ----------------------------------------------------------------------------
 $DefaultSettings = @{
-    UseStaticIP = $false
+    UseStaticIP = $false  # Default to DHCP
     Timezone = 'America/Chicago'
     Mtu = '1500'
     JoinAD = $false
@@ -141,15 +128,13 @@ $DefaultSettings = @{
 # ----------------------------------------------------------------------------
 # AZURE STORAGE ACCOUNT KEYS
 # ----------------------------------------------------------------------------
-# REQUIRED: Get these from Azure Portal or Azure CLI
-# az storage account keys list --account-name <name> --query "[0].value" -o tsv
+# Leave empty - script will auto-retrieve from Azure after Terraform creates them
 $StorageAccountKeys = @{
-    "pgrscusnasunipdst" = ""  # UPDATE: Paste key from Azure
-    "qisscusnasunipdst" = ""  # UPDATE: Paste key from Azure
-    "qticcesnasunipdad" = ""  # UPDATE: Paste key from Azure
+    "pgrscusnasunipdst" = ""  # Auto-retrieve
+    "qisscusnasunipdst" = ""  # Auto-retrieve
+    "qticcesnasunipdad" = ""  # Auto-retrieve
 }
 
-# Default container naming pattern
 $DefaultContainerPattern = "nasuni-{environment}-volume"
 
 # ----------------------------------------------------------------------------
@@ -161,22 +146,18 @@ $ConfigStepDelay = 10
 $MaxRetries = 3
 $VerboseLogging = $true
 $ErrorActionPreference = "Stop"
-
-# Parallel execution (use with caution)
 $UseParallelExecution = $false
 $MaxParallelJobs = 3
 
 # ----------------------------------------------------------------------------
 # WORKSPACE TO SUBSCRIPTION MAPPING
 # ----------------------------------------------------------------------------
-# MUST match your locals.tf workspace_subscriptions
 $WorkspaceSubscriptions = @{
     "pgr" = "c7a18a12-7088-4955-8504-5156e8f48fdd"
     "qis" = "6b025554-fc3d-49a6-a9a1-56d397909042"
     "qti" = "8f054358-9640-4873-a3bf-f1e3547ed39f"
 }
 
-# Friendly names for reporting
 $SubscriptionNames = @{
     "c7a18a12-7088-4955-8504-5156e8f48fdd" = "PGR"
     "6b025554-fc3d-49a6-a9a1-56d397909042" = "QIS"
@@ -194,6 +175,50 @@ $SendErrorEmail = $false
 # HELPER FUNCTIONS
 # ----------------------------------------------------------------------------
 
+function Get-VNetDnsServers {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$VNetName,
+        
+        [Parameter(Mandatory=$true)]
+        [string]$ResourceGroup,
+        
+        [Parameter(Mandatory=$true)]
+        [string]$SubscriptionId
+    )
+    
+    try {
+        Write-Host "[INFO] Retrieving DNS servers from VNet: $VNetName" -ForegroundColor Cyan
+        
+        # Set subscription context
+        az account set --subscription $SubscriptionId 2>$null | Out-Null
+        
+        # Get VNet DNS configuration
+        $dnsServersJson = az network vnet show `
+            --name $VNetName `
+            --resource-group $ResourceGroup `
+            --query "dhcpOptions.dnsServers" `
+            -o json 2>$null
+        
+        if ($dnsServersJson) {
+            $dnsServers = $dnsServersJson | ConvertFrom-Json
+            
+            if ($dnsServers -and $dnsServers.Count -gt 0) {
+                Write-Host "[OK] Found DNS servers in VNet: $($dnsServers -join ', ')" -ForegroundColor Green
+                return $dnsServers
+            }
+        }
+        
+        # If no custom DNS, VNet uses Azure default DNS (168.63.129.16)
+        Write-Host "[INFO] VNet uses Azure default DNS (168.63.129.16)" -ForegroundColor Cyan
+        return @("168.63.129.16")
+    }
+    catch {
+        Write-Warning "Could not retrieve DNS from VNet $VNetName : $_"
+        return @()
+    }
+}
+
 function Get-ApplianceSettings {
     param(
         [Parameter(Mandatory=$true)]
@@ -205,10 +230,12 @@ function Get-ApplianceSettings {
     
     $settings = $DefaultSettings.Clone()
     
+    # Merge CSV data
     foreach ($key in $CsvData.Keys) {
         $settings[$key] = $CsvData[$key]
     }
     
+    # Apply appliance-specific overrides
     if ($ApplianceOverrides.ContainsKey($ApplianceName)) {
         $override = $ApplianceOverrides[$ApplianceName]
         foreach ($key in $override.Keys) {
@@ -216,12 +243,59 @@ function Get-ApplianceSettings {
         }
     }
     
+    # Auto-detect DNS from VNet if not explicitly set
+    $needsDnsDetection = (-not $settings.ContainsKey('PrimaryDns') -or [string]::IsNullOrEmpty($settings.PrimaryDns))
+    
+    if ($needsDnsDetection -and $CsvData.ContainsKey('existing_vnet_name') -and $CsvData.ContainsKey('existing_vnet_resource_group')) {
+        $vnetName = $CsvData.existing_vnet_name
+        $vnetRg = $CsvData.existing_vnet_resource_group
+        $subId = $CsvData.subscription_id
+        
+        # Check for manual override first
+        if ($ManualDnsOverride.ContainsKey($vnetName)) {
+            $dnsServers = $ManualDnsOverride[$vnetName]
+            Write-Host "[INFO] Using manual DNS override for $vnetName" -ForegroundColor Cyan
+        }
+        else {
+            # Auto-detect from VNet
+            $dnsServers = Get-VNetDnsServers -VNetName $vnetName -ResourceGroup $vnetRg -SubscriptionId $subId
+        }
+        
+        if ($dnsServers -and $dnsServers.Count -gt 0) {
+            $settings.PrimaryDns = $dnsServers[0]
+            if ($dnsServers.Count -gt 1) {
+                $settings.SecondaryDns = $dnsServers[1]
+            }
+            else {
+                # If only one DNS server, use it for both
+                $settings.SecondaryDns = $dnsServers[0]
+            }
+            
+            Write-Host "[OK] DNS configured: Primary=$($settings.PrimaryDns), Secondary=$($settings.SecondaryDns)" -ForegroundColor Green
+        }
+    }
+    
+    # Fallback to defaults if still not set
     if (-not $settings.ContainsKey('PrimaryDns') -or [string]::IsNullOrEmpty($settings.PrimaryDns)) {
-        $settings.PrimaryDns = $DefaultPrimaryDns
+        if (-not [string]::IsNullOrEmpty($DefaultPrimaryDns)) {
+            $settings.PrimaryDns = $DefaultPrimaryDns
+            Write-Host "[INFO] Using default primary DNS: $DefaultPrimaryDns" -ForegroundColor Cyan
+        }
+        else {
+            Write-Warning "No DNS configured and auto-detection failed. Using Azure default DNS."
+            $settings.PrimaryDns = "168.63.129.16"
+        }
     }
+    
     if (-not $settings.ContainsKey('SecondaryDns') -or [string]::IsNullOrEmpty($settings.SecondaryDns)) {
-        $settings.SecondaryDns = $DefaultSecondaryDns
+        if (-not [string]::IsNullOrEmpty($DefaultSecondaryDns)) {
+            $settings.SecondaryDns = $DefaultSecondaryDns
+        }
+        else {
+            $settings.SecondaryDns = $settings.PrimaryDns
+        }
     }
+    
     if (-not $settings.ContainsKey('SearchDomain') -or [string]::IsNullOrEmpty($settings.SearchDomain)) {
         $settings.SearchDomain = $DefaultSearchDomain
     }
@@ -235,6 +309,7 @@ function Get-StorageAccountKey {
         [string]$StorageAccountName
     )
     
+    # First check if we have it in the hashtable
     if ($StorageAccountKeys.ContainsKey($StorageAccountName)) {
         $key = $StorageAccountKeys[$StorageAccountName]
         if (-not [string]::IsNullOrEmpty($key)) {
@@ -242,18 +317,20 @@ function Get-StorageAccountKey {
         }
     }
     
+    # If not, retrieve from Azure
     try {
         Write-Host "[INFO] Retrieving storage key for $StorageAccountName from Azure..." -ForegroundColor Cyan
         $key = az storage account keys list --account-name $StorageAccountName --query "[0].value" -o tsv 2>$null
         if ($key) {
+            Write-Host "[OK] Retrieved storage key from Azure" -ForegroundColor Green
             return $key
         }
     }
     catch {
-        Write-Warning "Could not retrieve storage key for $StorageAccountName"
+        Write-Warning "Could not retrieve storage key for $StorageAccountName: $_"
     }
     
-    return ""
+    throw "Could not retrieve storage key for $StorageAccountName. Ensure storage account exists and you have access."
 }
 
 function Test-Configuration {
@@ -266,10 +343,10 @@ function Test-Configuration {
     }
     
     if ($SerialNumberMethod -eq "nmc") {
-        if ($NmcHostname -eq "nmc.quantaservices.com") {
+        if ($NmcHostname -like "*example*" -or $NmcHostname -like "*your-nmc*") {
             $issues += "NMC Hostname needs to be updated with actual hostname"
         }
-        if ($NmcPassword -like "*YourNmc*") {
+        if ($NmcPassword -like "*YourNmc*" -or $NmcPassword -like "*example*") {
             $issues += "NMC Password needs to be updated"
         }
     }
@@ -282,36 +359,6 @@ function Test-Configuration {
     foreach ($ws in $terraformWorkspaces) {
         if (-not $WorkspaceSubscriptions.ContainsKey($ws)) {
             $issues += "Terraform workspace '$ws' not in WorkspaceSubscriptions mapping"
-        }
-    }
-    
-    $allKeysEmpty = $true
-    foreach ($key in $StorageAccountKeys.Values) {
-        if (-not [string]::IsNullOrEmpty($key)) {
-            $allKeysEmpty = $false
-            break
-        }
-    }
-    if ($allKeysEmpty) {
-        $issues += "All storage account keys are empty. Update StorageAccountKeys or ensure Azure CLI access."
-    }
-    
-    if ($ApplianceOverrides.Count -gt 0) {
-        foreach ($applianceName in $ApplianceOverrides.Keys) {
-            $override = $ApplianceOverrides[$applianceName]
-            if ($override.UseStaticIP) {
-                if ([string]::IsNullOrEmpty($override.StaticIP)) {
-                    $issues += "Appliance '$applianceName' has UseStaticIP=true but no StaticIP"
-                }
-                if ([string]::IsNullOrEmpty($override.Gateway)) {
-                    $issues += "Appliance '$applianceName' has UseStaticIP=true but no Gateway"
-                }
-            }
-            if ($override.JoinAD) {
-                if ([string]::IsNullOrEmpty($override.AdUsername) -or [string]::IsNullOrEmpty($override.AdPassword)) {
-                    $issues += "Appliance '$applianceName' has JoinAD=true but missing AD credentials"
-                }
-            }
         }
     }
     
@@ -328,33 +375,8 @@ function Test-Configuration {
         Write-Host "Mode: $DeploymentMode" -ForegroundColor Cyan
         Write-Host "CSV: $AppliancesCsvPath" -ForegroundColor Cyan
         Write-Host "Workspaces: $($WorkspaceSubscriptions.Count) configured" -ForegroundColor Cyan
+        Write-Host "Network: Using DHCP for IP assignment" -ForegroundColor Cyan
+        Write-Host "DNS: Auto-detection from VNet enabled" -ForegroundColor Cyan
         return $true
     }
 }
-
-# ============================================================================
-# NOTES
-# ============================================================================
-<#
-BEFORE RUNNING:
-1. Update NMC hostname, username, and password
-2. Get storage account keys from Azure and add to $StorageAccountKeys
-3. Configure $ApplianceOverrides with your network settings
-4. Set static IPs, gateways, DNS for each appliance
-5. Configure Active Directory settings if joining domain
-6. Verify workspace mapping matches locals.tf
-7. Ensure VPN/network access to appliances
-
-USAGE:
-# Configure appliances in current workspace
-pwsh Deploy-NasuniAutomation.ps1 -Workspace pgr
-
-# Configure all appliances
-pwsh Deploy-NasuniAutomation.ps1 -Mode all
-
-# Configure specific appliances
-pwsh Deploy-NasuniAutomation.ps1 -Mode specific -Appliances "PGRSCUTNUNIVP01"
-
-# Dry run (test without configuring)
-pwsh Deploy-NasuniAutomation.ps1 -Workspace pgr -DryRun
-#>
