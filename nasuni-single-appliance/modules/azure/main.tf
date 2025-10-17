@@ -104,7 +104,7 @@ resource "azurerm_network_interface" "nasuni" {
   name                          = "${var.name_prefix}-nic"
   location                      = data.azurerm_resource_group.nasuni.location
   resource_group_name           = data.azurerm_resource_group.nasuni.name
-  enable_accelerated_networking = var.enable_accelerated_networking
+  accelerated_networking_enabled = var.enable_accelerated_networking
   tags                          = var.tags
 
   ip_configuration {
@@ -175,7 +175,7 @@ resource "azurerm_linux_virtual_machine" "nasuni" {
   admin_username      = var.admin_username
   
   # Availability Set (use provided or newly created)
-  availability_set_id = local.availability_set_id
+  #availability_set_id = local.availability_set_id
   
   tags                = var.tags
 

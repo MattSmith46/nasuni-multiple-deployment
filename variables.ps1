@@ -43,7 +43,7 @@ $SerialNumberMethod = "nmc"
 # Leave empty to auto-detect from VNet configuration
 $DefaultPrimaryDns = ''         # Empty = Auto-detect from VNet
 $DefaultSecondaryDns = ''       # Empty = Auto-detect from VNet
-$DefaultSearchDomain = 'quantaservices.com'
+$DefaultSearchDomain = 'quantaservices.local'
 $DefaultNtpServer = 'time.windows.com'
 $DefaultNtpServer2 = 'pool.ntp.org'
 
@@ -66,7 +66,7 @@ $ApplianceOverrides = @{
         # Network Configuration - DHCP
         UseStaticIP = $false  # Let Azure assign IP via DHCP
         # PrimaryDns and SecondaryDns will be auto-detected from VNet
-        SearchDomain = "quantaservices.com"
+        SearchDomain = "quantaservices.local"
         
         # Active Directory (optional)
         JoinAD = $false

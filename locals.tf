@@ -22,7 +22,7 @@ locals {
       
       # New optional fields with defaults
       accelerated_networking      = try(a.accelerated_networking, "true")
-      disk_type                   = try(a.disk_type, "PremiumV2_LRS")
+      disk_type                   = try(a.disk_type, "Premium_LRS")
       disk_iops                   = try(a.disk_iops, "3000")
       disk_mbps                   = try(a.disk_mbps, "125")
       enable_dns_reverse          = try(a.enable_dns_reverse, "false")
@@ -46,9 +46,10 @@ locals {
     pgr = "c7a18a12-7088-4955-8504-5156e8f48fdd"
     qis = "6b025554-fc3d-49a6-a9a1-56d397909042"
     qti = "8f054358-9640-4873-a3bf-f1e3547ed39f"
-    # To add more subscriptions:
-    # sub4 = "dddddddd-4444-4444-4444-444444444444"
-    # sub5 = "eeeeeeee-5555-5555-5555-555555555555"
+    nlc = "c6acb9eb-b6f5-4d21-8794-8585174f9a49"
+    ugc = "6924ee6e-7efc-40b2-a432-fd4056ff11ed"
+    qco = "bc1f6e12-bffe-4aa1-84e0-4c3cd6e3a8d4"
+    ims = "debd8577-362f-4c5f-aafa-d2075a7113fc"
   }
 
   # Get current workspace (defaults to "default" if no workspace selected)
