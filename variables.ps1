@@ -2,11 +2,19 @@
 # Nasuni Edge Appliance Automation Variables Configuration
 # Multi-Subscription Workspace Integration
 # ============================================================================
+# Copy this file to your Terraform directory and update the values below
+# Usage: ./Deploy-NasuniAutomation.ps1 -Workspace <workspace-name>
+# ============================================================================
 
 # ----------------------------------------------------------------------------
 # DEPLOYMENT MODE
 # ----------------------------------------------------------------------------
+# "workspace" - Configure appliances in current Terraform workspace (recommended)
+# "all"       - Configure all appliances from CSV regardless of workspace
+# "specific"  - Configure only specific appliances (set $TargetAppliances)
 $DeploymentMode = "workspace"
+
+# If DeploymentMode = "specific", list appliance names here
 $TargetAppliances = @()
 
 # ----------------------------------------------------------------------------
@@ -17,6 +25,7 @@ $AppliancesCsvPath = "./appliances.csv"
 # ----------------------------------------------------------------------------
 # NMC (NASUNI MANAGEMENT CONSOLE) CONFIGURATION
 # ----------------------------------------------------------------------------
+# REQUIRED: Update these with your actual NMC details
 $NmcHostname = "qcoscujnunicp01.quantaservices.local"
 $NmcUsername = "svcqconasuni"
 $NmcPassword = '!!!l0c4dm1n!!!3c905btx!!!'
@@ -24,6 +33,7 @@ $NmcPassword = '!!!l0c4dm1n!!!3c905btx!!!'
 # ----------------------------------------------------------------------------
 # SERIAL NUMBER RETRIEVAL
 # ----------------------------------------------------------------------------
+# "nmc" - Retrieve from NMC (recommended, works with all Nasuni versions)
 $SerialNumberMethod = "nmc"
 
 # ----------------------------------------------------------------------------
@@ -38,10 +48,11 @@ $DefaultNtpServer = 'time.windows.com'
 $DefaultNtpServer2 = 'pool.ntp.org'
 
 # Manual DNS Override (optional)
-# If you want to force specific DNS servers instead of auto-detection, set them here:
+# If you want to force specific DNS servers instead of auto-detection, uncomment and configure:
 $ManualDnsOverride = @{
-    # Example:
+    # Example - uncomment and update if needed:
     # "PGR-Nasuni-Network-pd-scus-vnet" = @("10.239.0.10", "10.239.0.11")
+    # "QIS-Nasuni-Network-pd-scus-vnet" = @("10.240.0.10", "10.240.0.11")
     # "QTI-Nasuni-Network-pd-cace-vnet" = @("10.241.0.10", "10.241.0.11")
 }
 
@@ -49,7 +60,7 @@ $ManualDnsOverride = @{
 # APPLIANCE-SPECIFIC OVERRIDES
 # ----------------------------------------------------------------------------
 # Using DHCP for all appliances - IPs assigned by Azure automatically
-# DNS will be auto-detected from VNet configuration
+# DNS will be auto-detected from VNet configuration per region
 $ApplianceOverrides = @{
     "PGRSCUTNUNIVP01" = @{
         # Network Configuration - DHCP
@@ -103,7 +114,7 @@ $ApplianceOverrides = @{
 }
 
 # ----------------------------------------------------------------------------
-# DEFAULT SETTINGS
+# DEFAULT SETTINGS (Used if not overridden above)
 # ----------------------------------------------------------------------------
 $DefaultSettings = @{
     UseStaticIP = $false  # Default to DHCP
@@ -130,11 +141,12 @@ $DefaultSettings = @{
 # ----------------------------------------------------------------------------
 # Leave empty - script will auto-retrieve from Azure after Terraform creates them
 $StorageAccountKeys = @{
-    "pgrscusnasunipdst" = ""  # Auto-retrieve
-    "qisscusnasunipdst" = ""  # Auto-retrieve
-    "qticcesnasunipdad" = ""  # Auto-retrieve
+    "pgrscusnasunipdst" = ""  # Auto-retrieve from Azure
+    "qisscusnasunipdst" = ""  # Auto-retrieve from Azure
+    "qticcesnasunipdad" = ""  # Auto-retrieve from Azure
 }
 
+# Default container naming pattern
 $DefaultContainerPattern = "nasuni-{environment}-volume"
 
 # ----------------------------------------------------------------------------
@@ -146,18 +158,22 @@ $ConfigStepDelay = 10
 $MaxRetries = 3
 $VerboseLogging = $true
 $ErrorActionPreference = "Stop"
+
+# Parallel execution (use with caution)
 $UseParallelExecution = $false
 $MaxParallelJobs = 3
 
 # ----------------------------------------------------------------------------
 # WORKSPACE TO SUBSCRIPTION MAPPING
 # ----------------------------------------------------------------------------
+# MUST match your locals.tf workspace_subscriptions
 $WorkspaceSubscriptions = @{
     "pgr" = "c7a18a12-7088-4955-8504-5156e8f48fdd"
     "qis" = "6b025554-fc3d-49a6-a9a1-56d397909042"
     "qti" = "8f054358-9640-4873-a3bf-f1e3547ed39f"
 }
 
+# Friendly names for reporting
 $SubscriptionNames = @{
     "c7a18a12-7088-4955-8504-5156e8f48fdd" = "PGR"
     "6b025554-fc3d-49a6-a9a1-56d397909042" = "QIS"
@@ -176,6 +192,23 @@ $SendErrorEmail = $false
 # ----------------------------------------------------------------------------
 
 function Get-VNetDnsServers {
+    <#
+    .SYNOPSIS
+    Retrieves DNS servers configured on an Azure VNet
+    
+    .DESCRIPTION
+    Queries Azure to get the DNS server configuration for a specific VNet.
+    If no custom DNS is configured, returns Azure's default DNS (168.63.129.16)
+    
+    .PARAMETER VNetName
+    Name of the Virtual Network
+    
+    .PARAMETER ResourceGroup
+    Resource Group containing the VNet
+    
+    .PARAMETER SubscriptionId
+    Azure Subscription ID
+    #>
     param(
         [Parameter(Mandatory=$true)]
         [string]$VNetName,
@@ -220,6 +253,20 @@ function Get-VNetDnsServers {
 }
 
 function Get-ApplianceSettings {
+    <#
+    .SYNOPSIS
+    Gets configuration settings for a specific appliance
+    
+    .DESCRIPTION
+    Merges default settings with CSV data and appliance-specific overrides.
+    Automatically detects DNS from VNet configuration if not explicitly set.
+    
+    .PARAMETER ApplianceName
+    Name of the appliance (VM name)
+    
+    .PARAMETER CsvData
+    Hashtable containing data from the CSV row for this appliance
+    #>
     param(
         [Parameter(Mandatory=$true)]
         [string]$ApplianceName,
@@ -304,6 +351,17 @@ function Get-ApplianceSettings {
 }
 
 function Get-StorageAccountKey {
+    <#
+    .SYNOPSIS
+    Retrieves Azure Storage Account access key
+    
+    .DESCRIPTION
+    First checks if key is in $StorageAccountKeys hashtable.
+    If not found, automatically retrieves from Azure using Azure CLI.
+    
+    .PARAMETER StorageAccountName
+    Name of the Azure Storage Account
+    #>
     param(
         [Parameter(Mandatory=$true)]
         [string]$StorageAccountName
@@ -334,6 +392,13 @@ function Get-StorageAccountKey {
 }
 
 function Test-Configuration {
+    <#
+    .SYNOPSIS
+    Validates the configuration in this file
+    
+    .DESCRIPTION
+    Checks for common configuration issues before deployment
+    #>
     Write-Host "Validating configuration..." -ForegroundColor Cyan
     
     $issues = @()
@@ -377,6 +442,49 @@ function Test-Configuration {
         Write-Host "Workspaces: $($WorkspaceSubscriptions.Count) configured" -ForegroundColor Cyan
         Write-Host "Network: Using DHCP for IP assignment" -ForegroundColor Cyan
         Write-Host "DNS: Auto-detection from VNet enabled" -ForegroundColor Cyan
+        Write-Host "Storage Keys: Auto-retrieval from Azure enabled" -ForegroundColor Cyan
         return $true
     }
 }
+
+# ============================================================================
+# NOTES AND USAGE
+# ============================================================================
+# 
+# CONFIGURATION SUMMARY:
+# - IP Assignment: DHCP (automatic from Azure)
+# - DNS Servers: Auto-detected from VNet configuration per region
+# - Storage Keys: Auto-retrieved from Azure after Terraform deployment
+# - NMC: qcoscujnunicp01.quantaservices.local
+#
+# BEFORE RUNNING:
+# 1. Ensure NMC (qcoscujnunicp01.quantaservices.local) is accessible
+# 2. Verify you're logged into Azure with: az login
+# 3. Deploy infrastructure first with Terraform
+# 4. Run this automation script after Terraform completes
+#
+# USAGE EXAMPLES:
+# 
+# Configure appliances in current workspace:
+#   pwsh Deploy-NasuniAutomation.ps1 -Workspace pgr
+#
+# Configure all appliances across all subscriptions:
+#   pwsh Deploy-NasuniAutomation.ps1 -Mode all
+#
+# Configure specific appliances:
+#   pwsh Deploy-NasuniAutomation.ps1 -Mode specific -Appliances "PGRSCUTNUNIVP01"
+#
+# Dry run (test without configuring):
+#   pwsh Deploy-NasuniAutomation.ps1 -Workspace pgr -DryRun
+#
+# WHAT GETS AUTO-CONFIGURED:
+# - Private IP addresses (from Terraform outputs)
+# - DNS servers (from VNet configuration)
+# - Storage account keys (from Azure)
+# - Region-specific settings (timezone, location)
+#
+# MANUAL OVERRIDES (if needed):
+# - Set $ManualDnsOverride for specific VNets
+# - Set $DefaultPrimaryDns/$DefaultSecondaryDns as fallback
+# - Update $ApplianceOverrides for appliance-specific settings
+# ============================================================================
